@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+
+  msr:
+    image: ${MSR_CONTAINER_IMAGE}:${MSR_CONTAINER_IMAGE_TAG}
+    container_name: w-01-03-dev-msr
+    ports:
+      - ${HOST_PORT_PREFIX}55:5555
+    volumes:
+      - ${HOST_MSR_LICENSE_FILE}:${GUEST_MSR_LICENSE_FILE_MOUNT_POINT}
+      - ./config/MSR/application.properties:${GUEST_MSR_APP_PROPS_FILE_MOUNT_POINT}
+      # Canonicals
+      - ../../../01.common/code/is-packages/KSCanonicals/:${GUEST_IS_HOME}/packages/KSCanonicals/
+      - ../../../01.common/code/is-packages/KSCanonicalMessages/:${GUEST_IS_HOME}/packages/KSCanonicalMessages/
+      # Our Code - Subscriber Side (Front Office)
+      - ../../../03.subscriber/code/is-packages/KsFoCommonItemMaster/:${GUEST_IS_HOME}/packages/KsFoCommonItemMaster/
+      - ../../../03.subscriber/code/is-packages/KsFoCommonItemMasterLocalTest/:${GUEST_IS_HOME}/packages/KsFoCommonItemMasterLocalTest/
+      - ../../../03.subscriber/code/is-packages/KsFoReceivesItemMaster/:${GUEST_IS_HOME}/packages/KsFoReceivesItemMaster/
+      - ../../../03.subscriber/code/is-packages/KsFoReceivesItemMasterLocalTest/:${GUEST_IS_HOME}/packages/KsFoReceivesItemMasterLocalTest/
+    environment:
+      - SAG_IS_LICENSE_FILE=${GUEST_MSR_LICENSE_FILE_MOUNT_POINT}
+      - SAG_IS_CONFIG_PROPERTIES=${GUEST_MSR_APP_PROPS_FILE_MOUNT_POINT}
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=postgres
+
+  um:
+    image:  ${UM_CONTAINER_IMAGE}:${UM_CONTAINER_IMAGE_TAG}
+    container_name: w-01-03-dev-um
+    volumes:
+      - um_data:/opt/softwareag/UniversalMessaging/server/umserver/data/
+      - ./config/UM/License/:/opt/softwareag/UniversalMessaging/server/umserver/licence/
+      - um_logs:/opt/softwareag/UniversalMessaging/server/umserver/logs/
+      - um_users:/opt/softwareag/common/conf/
+    ports:
+      - ${HOST_PORT_PREFIX}90:9000
+
+  postgres:
+    image: postgres
+    hostname: postgres
+    restart: always
+    ports:
+      - ${HOST_PORT_PREFIX}32:5432
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    ports:
+      - ${HOST_PORT_PREFIX}80:8080
+
+volumes:
+  postgres_data: {}
+  um_data: {}
+  um_logs: {}
+  um_users: {}
